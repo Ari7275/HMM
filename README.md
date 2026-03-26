@@ -1,3 +1,6 @@
+*** note- this all project is a result of a 2 hours vibe coding session, just wanted an easy way to keep in mind my progress in selcting the actors and sets in the HanZai Movie Method.
+** we saving the all 56 initals + 13 finals as JSON in the local storage for now. 
+
 # Mandarin Blueprint Mapper
 
 A small personal web app for managing your Mandarin Blueprint / Hanzi Movie Method mappings.
