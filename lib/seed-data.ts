@@ -1,0 +1,111 @@
+import type {
+  AppStorageData,
+  FinalDraft,
+  FinalSeed,
+  InitialDraft,
+  InitialSeed,
+} from "@/lib/types";
+
+export const INITIAL_SEEDS: InitialSeed[] = [
+  { id: "b", pinyin: "b", category: "male", groupLabel: "Male Actors" },
+  { id: "p", pinyin: "p", category: "male", groupLabel: "Male Actors" },
+  { id: "m", pinyin: "m", category: "male", groupLabel: "Male Actors" },
+  { id: "f", pinyin: "f", category: "male", groupLabel: "Male Actors" },
+  { id: "d", pinyin: "d", category: "male", groupLabel: "Male Actors" },
+  { id: "t", pinyin: "t", category: "male", groupLabel: "Male Actors" },
+  { id: "n", pinyin: "n", category: "male", groupLabel: "Male Actors" },
+  { id: "l", pinyin: "l", category: "male", groupLabel: "Male Actors" },
+  { id: "g", pinyin: "g", category: "male", groupLabel: "Male Actors" },
+  { id: "k", pinyin: "k", category: "male", groupLabel: "Male Actors" },
+  { id: "h", pinyin: "h", category: "male", groupLabel: "Male Actors" },
+  { id: "zh", pinyin: "zh", category: "male", groupLabel: "Male Actors" },
+  { id: "ch", pinyin: "ch", category: "male", groupLabel: "Male Actors" },
+  { id: "sh", pinyin: "sh", category: "male", groupLabel: "Male Actors" },
+  { id: "r", pinyin: "r", category: "male", groupLabel: "Male Actors" },
+  { id: "z", pinyin: "z", category: "male", groupLabel: "Male Actors" },
+  { id: "c", pinyin: "c", category: "male", groupLabel: "Male Actors" },
+  { id: "s", pinyin: "s", category: "male", groupLabel: "Male Actors" },
+  { id: "null-initial", pinyin: "Ø", category: "null", groupLabel: "Null Initial" },
+  { id: "y", pinyin: "y", category: "female", groupLabel: "Female Actors" },
+  { id: "bi", pinyin: "bi", category: "female", groupLabel: "Female Actors" },
+  { id: "pi", pinyin: "pi", category: "female", groupLabel: "Female Actors" },
+  { id: "mi", pinyin: "mi", category: "female", groupLabel: "Female Actors" },
+  { id: "di", pinyin: "di", category: "female", groupLabel: "Female Actors" },
+  { id: "ti", pinyin: "ti", category: "female", groupLabel: "Female Actors" },
+  { id: "ni", pinyin: "ni", category: "female", groupLabel: "Female Actors" },
+  { id: "li", pinyin: "li", category: "female", groupLabel: "Female Actors" },
+  { id: "ji", pinyin: "ji", category: "female", groupLabel: "Female Actors" },
+  { id: "qi", pinyin: "qi", category: "female", groupLabel: "Female Actors" },
+  { id: "xi", pinyin: "xi", category: "female", groupLabel: "Female Actors" },
+  { id: "w", pinyin: "w", category: "fictional", groupLabel: "Fictional Actors" },
+  { id: "bu", pinyin: "bu", category: "fictional", groupLabel: "Fictional Actors" },
+  { id: "pu", pinyin: "pu", category: "fictional", groupLabel: "Fictional Actors" },
+  { id: "mu", pinyin: "mu", category: "fictional", groupLabel: "Fictional Actors" },
+  { id: "fu", pinyin: "fu", category: "fictional", groupLabel: "Fictional Actors" },
+  { id: "du", pinyin: "du", category: "fictional", groupLabel: "Fictional Actors" },
+  { id: "tu", pinyin: "tu", category: "fictional", groupLabel: "Fictional Actors" },
+  { id: "nu", pinyin: "nu", category: "fictional", groupLabel: "Fictional Actors" },
+  { id: "lu", pinyin: "lu", category: "fictional", groupLabel: "Fictional Actors" },
+  { id: "gu", pinyin: "gu", category: "fictional", groupLabel: "Fictional Actors" },
+  { id: "ku", pinyin: "ku", category: "fictional", groupLabel: "Fictional Actors" },
+  { id: "hu", pinyin: "hu", category: "fictional", groupLabel: "Fictional Actors" },
+  { id: "zhu", pinyin: "zhu", category: "fictional", groupLabel: "Fictional Actors" },
+  { id: "chu", pinyin: "chu", category: "fictional", groupLabel: "Fictional Actors" },
+  { id: "shu", pinyin: "shu", category: "fictional", groupLabel: "Fictional Actors" },
+  { id: "ru", pinyin: "ru", category: "fictional", groupLabel: "Fictional Actors" },
+  { id: "zu", pinyin: "zu", category: "fictional", groupLabel: "Fictional Actors" },
+  { id: "cu", pinyin: "cu", category: "fictional", groupLabel: "Fictional Actors" },
+  { id: "su", pinyin: "su", category: "fictional", groupLabel: "Fictional Actors" },
+  { id: "yu", pinyin: "yu", category: "leader", groupLabel: "Leaders or Gods" },
+  { id: "nv", pinyin: "nü", category: "leader", groupLabel: "Leaders or Gods" },
+  { id: "lv", pinyin: "lü", category: "leader", groupLabel: "Leaders or Gods" },
+  { id: "ju", pinyin: "ju", category: "leader", groupLabel: "Leaders or Gods" },
+  { id: "qu", pinyin: "qu", category: "leader", groupLabel: "Leaders or Gods" },
+  { id: "xu", pinyin: "xu", category: "leader", groupLabel: "Leaders or Gods" },
+];
+
+export const FINAL_SEEDS: FinalSeed[] = [
+  { id: "a", pinyin: "a", category: "standard", groupLabel: "Sets" },
+  { id: "ai", pinyin: "ai", category: "standard", groupLabel: "Sets" },
+  { id: "ao", pinyin: "ao", category: "standard", groupLabel: "Sets" },
+  { id: "an", pinyin: "an", category: "standard", groupLabel: "Sets" },
+  { id: "ang", pinyin: "ang", category: "standard", groupLabel: "Sets" },
+  { id: "o", pinyin: "o", category: "standard", groupLabel: "Sets" },
+  { id: "ou", pinyin: "ou", category: "standard", groupLabel: "Sets" },
+  { id: "ong", pinyin: "ong", category: "standard", groupLabel: "Sets" },
+  { id: "e", pinyin: "e", category: "standard", groupLabel: "Sets" },
+  { id: "ei", pinyin: "ei", category: "standard", groupLabel: "Sets" },
+  { id: "en", pinyin: "en", category: "standard", groupLabel: "Sets" },
+  { id: "eng", pinyin: "eng", category: "standard", groupLabel: "Sets" },
+  { id: "null-final", pinyin: "Ø", category: "null", groupLabel: "Null Set" },
+];
+
+export const createEmptyInitialDraft = (): InitialDraft => ({
+  actorName: "",
+  description: "",
+  notes: "",
+});
+
+export const createEmptyFinalDraft = (): FinalDraft => ({
+  setName: "",
+  description: "",
+  zones: "",
+  notes: "",
+});
+
+export const createEmptyStorageData = (): AppStorageData => ({
+  version: 1,
+  initials: Object.fromEntries(
+    INITIAL_SEEDS.map((item) => [item.id, createEmptyInitialDraft()]),
+  ),
+  finals: Object.fromEntries(
+    FINAL_SEEDS.map((item) => [item.id, createEmptyFinalDraft()]),
+  ),
+  initialMeta: Object.fromEntries(
+    INITIAL_SEEDS.map((item) => [item.id, { lastEditedAt: null }]),
+  ),
+  finalMeta: Object.fromEntries(
+    FINAL_SEEDS.map((item) => [item.id, { lastEditedAt: null }]),
+  ),
+  recentEdits: [],
+});
