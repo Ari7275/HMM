@@ -13,12 +13,31 @@ import { MappingGrid, type MappingGridItem } from "@/components/mapping-grid";
 import { ProgressOverview } from "@/components/progress-overview";
 import { RecentEditsStrip } from "@/components/recent-edits-strip";
 import { SearchFilterBar } from "@/components/search-filter-bar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMappingStore } from "@/hooks/use-mapping-store";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { getFinalStatus, getInitialStatus } from "@/lib/status";
 import { filterFinalItems, filterInitialItems } from "@/lib/search";
-import type { EditorSelection, FilterStatus, FinalItem, InitialItem } from "@/lib/types";
+import type {
+  EditorSelection,
+  FilterStatus,
+  FinalDraft,
+  FinalItem,
+  InitialDraft,
+  InitialItem,
+} from "@/lib/types";
 
 function toInitialCard(item: InitialItem): MappingGridItem {
   return {
@@ -76,6 +95,10 @@ export function MappingDashboard() {
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [mobileTab, setMobileTab] = useState<"initials" | "finals">("initials");
   const [selection, setSelection] = useState<EditorSelection | null>(null);
+  const [initialDraft, setInitialDraft] = useState<InitialDraft | null>(null);
+  const [finalDraft, setFinalDraft] = useState<FinalDraft | null>(null);
+  const [pendingSelection, setPendingSelection] = useState<EditorSelection | null>(null);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
 
   const {
     data,
@@ -85,8 +108,8 @@ export function MappingDashboard() {
     recentEdits,
     isSaving,
     lastSavedAt,
-    updateInitial,
-    updateFinal,
+    saveInitial,
+    saveFinal,
     replaceData,
     resetData,
   } = useMappingStore();
@@ -108,6 +131,25 @@ export function MappingDashboard() {
     selection?.kind === "final"
       ? finals.find((item) => item.id === selection.id) ?? null
       : null;
+
+  const isInitialDirty = Boolean(
+    selectedInitial &&
+      initialDraft &&
+      (selectedInitial.actorName !== initialDraft.actorName ||
+        selectedInitial.description !== initialDraft.description ||
+        selectedInitial.notes !== initialDraft.notes),
+  );
+
+  const isFinalDirty = Boolean(
+    selectedFinal &&
+      finalDraft &&
+      (selectedFinal.setName !== finalDraft.setName ||
+        selectedFinal.description !== finalDraft.description ||
+        selectedFinal.zones !== finalDraft.zones ||
+        selectedFinal.notes !== finalDraft.notes),
+  );
+
+  const hasUnsavedChanges = isInitialDirty || isFinalDirty;
 
   const initialRecentIds = useMemo(
     () =>
@@ -135,6 +177,106 @@ export function MappingDashboard() {
     filter,
   });
 
+  const applySelection = (nextSelection: EditorSelection | null) => {
+    setSelection(nextSelection);
+
+    if (!nextSelection) {
+      setInitialDraft(null);
+      setFinalDraft(null);
+      return;
+    }
+
+    if (nextSelection.kind === "initial") {
+      const nextItem = initials.find((item) => item.id === nextSelection.id);
+
+      if (!nextItem) {
+        setSelection(null);
+        setInitialDraft(null);
+        setFinalDraft(null);
+        return;
+      }
+
+      setInitialDraft({
+        actorName: nextItem.actorName,
+        description: nextItem.description,
+        notes: nextItem.notes,
+      });
+      setFinalDraft(null);
+      return;
+    }
+
+    const nextItem = finals.find((item) => item.id === nextSelection.id);
+
+    if (!nextItem) {
+      setSelection(null);
+      setInitialDraft(null);
+      setFinalDraft(null);
+      return;
+    }
+
+    setFinalDraft({
+      setName: nextItem.setName,
+      description: nextItem.description,
+      zones: nextItem.zones,
+      notes: nextItem.notes,
+    });
+    setInitialDraft(null);
+  };
+
+  const requestSelection = (nextSelection: EditorSelection | null) => {
+    const isSameSelection =
+      selection?.kind === nextSelection?.kind && selection?.id === nextSelection?.id;
+
+    if (isSameSelection) {
+      return;
+    }
+
+    if (hasUnsavedChanges) {
+      setPendingSelection(nextSelection);
+      setShowUnsavedDialog(true);
+      return;
+    }
+
+    applySelection(nextSelection);
+  };
+
+  const discardUnsavedChanges = () => {
+    setShowUnsavedDialog(false);
+    applySelection(pendingSelection);
+    setPendingSelection(null);
+  };
+
+  const editorInitialItem =
+    selectedInitial && initialDraft
+      ? {
+          ...selectedInitial,
+          ...initialDraft,
+          status: getInitialStatus(initialDraft.actorName),
+        }
+      : null;
+
+  const editorFinalItem =
+    selectedFinal && finalDraft
+      ? {
+          ...selectedFinal,
+          ...finalDraft,
+          status: getFinalStatus(finalDraft.setName),
+        }
+      : null;
+
+  const saveCurrentEditor = () => {
+    if (selectedInitial && initialDraft) {
+      saveInitial(selectedInitial.id, initialDraft);
+      applySelection(null);
+      return;
+    }
+
+    if (selectedFinal && finalDraft) {
+      saveFinal(selectedFinal.id, finalDraft);
+      applySelection(null);
+    }
+  };
+
   return (
     <>
       <DashboardShell
@@ -157,11 +299,11 @@ export function MappingDashboard() {
             data={data}
             onImportData={(nextData) => {
               replaceData(nextData);
-              setSelection(null);
+              applySelection(null);
             }}
             onResetData={() => {
               resetData();
-              setSelection(null);
+              applySelection(null);
             }}
           />
         }
@@ -210,7 +352,7 @@ export function MappingDashboard() {
               visibleCount={filteredInitials.length}
               items={filteredInitials.map(toInitialCard)}
               recentIds={initialRecentIds}
-              onSelect={(id) => setSelection({ kind: "initial", id })}
+              onSelect={(id) => requestSelection({ kind: "initial", id })}
               emptyTitle={initialEmpty.title}
               emptyDescription={initialEmpty.description}
               showOnboardingHint={hasNoMappings}
@@ -222,7 +364,7 @@ export function MappingDashboard() {
               visibleCount={filteredFinals.length}
               items={filteredFinals.map(toFinalCard)}
               recentIds={finalRecentIds}
-              onSelect={(id) => setSelection({ kind: "final", id })}
+              onSelect={(id) => requestSelection({ kind: "final", id })}
               emptyTitle={finalEmpty.title}
               emptyDescription={finalEmpty.description}
               showOnboardingHint={hasNoMappings}
@@ -252,7 +394,7 @@ export function MappingDashboard() {
                     visibleCount={filteredInitials.length}
                     items={filteredInitials.map(toInitialCard)}
                     recentIds={initialRecentIds}
-                    onSelect={(id) => setSelection({ kind: "initial", id })}
+                    onSelect={(id) => requestSelection({ kind: "initial", id })}
                     emptyTitle={initialEmpty.title}
                     emptyDescription={initialEmpty.description}
                     showOnboardingHint={hasNoMappings}
@@ -274,7 +416,7 @@ export function MappingDashboard() {
                     visibleCount={filteredFinals.length}
                     items={filteredFinals.map(toFinalCard)}
                     recentIds={finalRecentIds}
-                    onSelect={(id) => setSelection({ kind: "final", id })}
+                    onSelect={(id) => requestSelection({ kind: "final", id })}
                     emptyTitle={finalEmpty.title}
                     emptyDescription={finalEmpty.description}
                     showOnboardingHint={hasNoMappings}
@@ -290,7 +432,7 @@ export function MappingDashboard() {
         open={Boolean(selection)}
         onOpenChange={(open) => {
           if (!open) {
-            setSelection(null);
+            requestSelection(null);
           }
         }}
         title={selectedInitial ? `Edit initial ${selectedInitial.pinyin}` : selectedFinal ? `Edit final ${selectedFinal.pinyin}` : "Edit mapping"}
@@ -302,23 +444,69 @@ export function MappingDashboard() {
               : "Choose a mapping from the chart to edit."
         }
         isDesktop={isDesktop}
+        footer={
+          <div className="flex items-center justify-end gap-3">
+            <Button variant="outline" onClick={() => requestSelection(null)}>
+              Cancel
+            </Button>
+            <Button onClick={saveCurrentEditor}>
+              Save
+            </Button>
+          </div>
+        }
       >
-        {selectedInitial ? (
+        {editorInitialItem ? (
           <InitialEditor
-            item={selectedInitial}
-            onChange={(patch) => updateInitial(selectedInitial.id, patch)}
-            onDone={() => setSelection(null)}
+            item={editorInitialItem}
+            onChange={(patch) =>
+              setInitialDraft((current) => ({
+                actorName: current?.actorName ?? "",
+                description: current?.description ?? "",
+                notes: current?.notes ?? "",
+                ...patch,
+              }))
+            }
           />
         ) : null}
 
-        {selectedFinal ? (
+        {editorFinalItem ? (
           <FinalEditor
-            item={selectedFinal}
-            onChange={(patch) => updateFinal(selectedFinal.id, patch)}
-            onDone={() => setSelection(null)}
+            item={editorFinalItem}
+            onChange={(patch) =>
+              setFinalDraft((current) => ({
+                setName: current?.setName ?? "",
+                description: current?.description ?? "",
+                zones: current?.zones ?? "",
+                notes: current?.notes ?? "",
+                ...patch,
+              }))
+            }
           />
         ) : null}
       </EditorSheet>
+
+      <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have edits in progress that have not been saved yet. Canceling or closing now will discard them.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setPendingSelection(null);
+              }}
+            >
+              Keep editing
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={discardUnsavedChanges}>
+              Discard changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

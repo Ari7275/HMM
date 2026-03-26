@@ -1,7 +1,6 @@
 import { CheckCircle2, CircleDashed, MapPinned } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -16,10 +15,9 @@ interface FinalEditorProps {
     zones?: string;
     notes?: string;
   }) => void;
-  onDone: () => void;
 }
 
-export function FinalEditor({ item, onChange, onDone }: FinalEditorProps) {
+export function FinalEditor({ item, onChange }: FinalEditorProps) {
   return (
     <div className="flex flex-col gap-6">
       <div className="rounded-[28px] border border-white/8 bg-white/[0.03] p-5">
@@ -98,9 +96,9 @@ export function FinalEditor({ item, onChange, onDone }: FinalEditorProps) {
             <MapPinned className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-sm font-medium">Zones preview</p>
+            <p className="text-sm font-medium">Draft zones preview</p>
             <p className="text-sm text-slate-400">
-              Use free text however you like. Line breaks are preserved for readability.
+              Use free text however you like. Line breaks are preserved, but nothing is committed until you save.
             </p>
           </div>
         </div>
@@ -108,8 +106,6 @@ export function FinalEditor({ item, onChange, onDone }: FinalEditorProps) {
           {item.zones.trim() || "No zones added yet. Try listing key corners, shelves, doors, or directional paths."}
         </div>
       </div>
-
-      <Button onClick={onDone}>Done</Button>
     </div>
   );
 }

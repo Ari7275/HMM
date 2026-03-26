@@ -54,7 +54,8 @@ export function ProgressOverview({
 }: ProgressOverviewProps) {
   const saveLabel = isSaving
     ? "Saving changes..."
-    : formatRelativeEditTime(lastSavedAt) ?? "Autosave ready";
+    : formatRelativeEditTime(lastSavedAt)?.replace("Edited", "Saved") ??
+      "No pending saves";
 
   return (
     <section className="grid gap-4 lg:grid-cols-[1.2fr_1.2fr_1fr]">
@@ -89,7 +90,7 @@ export function ProgressOverview({
               {saveLabel}
             </div>
             <p className="mt-2 text-xs leading-5 text-slate-400">
-              Edits are applied instantly in the UI and persisted locally with debounced writes.
+              Editor changes stay local until you press Save, then they are written to local storage.
             </p>
           </div>
         </CardContent>

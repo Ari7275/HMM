@@ -1,7 +1,6 @@
 import { CheckCircle2, CircleDashed, UserRound } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -15,10 +14,9 @@ interface InitialEditorProps {
     description?: string;
     notes?: string;
   }) => void;
-  onDone: () => void;
 }
 
-export function InitialEditor({ item, onChange, onDone }: InitialEditorProps) {
+export function InitialEditor({ item, onChange }: InitialEditorProps) {
   return (
     <div className="flex flex-col gap-6">
       <div className="rounded-[28px] border border-white/8 bg-white/[0.03] p-5">
@@ -87,15 +85,13 @@ export function InitialEditor({ item, onChange, onDone }: InitialEditorProps) {
             <UserRound className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-sm font-medium">Live feedback</p>
+            <p className="text-sm font-medium">Draft preview</p>
             <p className="text-sm text-slate-400">
-              Changes appear immediately in the chart and save automatically.
+              Changes stay local to this editor until you explicitly save them.
             </p>
           </div>
         </div>
       </div>
-
-      <Button onClick={onDone}>Done</Button>
     </div>
   );
 }

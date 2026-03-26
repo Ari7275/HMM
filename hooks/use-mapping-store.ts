@@ -32,7 +32,7 @@ export function useMappingStore() {
   const [isHydrated, setIsHydrated] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
-  const skipNextSaveRef = useRef(true);
+  const saveTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     const nextData = loadStorageData();
@@ -45,97 +45,107 @@ export function useMappingStore() {
   }, []);
 
   useEffect(() => {
-    if (!isHydrated) {
-      return;
-    }
-
-    if (skipNextSaveRef.current) {
-      skipNextSaveRef.current = false;
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      saveStorageData(data);
-      setIsSaving(false);
-      setLastSavedAt(new Date().toISOString());
-    }, WRITE_DEBOUNCE_MS);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [data, isHydrated]);
+    return () => {
+      if (saveTimeoutRef.current) {
+        window.clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const initials = useMemo(() => buildInitialItems(data), [data]);
   const finals = useMemo(() => buildFinalItems(data), [data]);
   const totals = useMemo(() => getTotalsSummary(data), [data]);
 
-  const updateInitial = (id: string, patch: Partial<InitialDraft>) => {
+  const saveInitial = (id: string, nextDraft: InitialDraft) => {
     const seed = initials.find((item) => item.id === id);
     const updatedAt = new Date().toISOString();
 
     setIsSaving(true);
-    setData((current) => ({
-      ...current,
-      initials: {
-        ...current.initials,
-        [id]: {
-          ...current.initials[id],
-          ...patch,
+    setData((current) => {
+      const nextData = {
+        ...current,
+        initials: {
+          ...current.initials,
+          [id]: {
+            ...nextDraft,
+          },
         },
-      },
-      initialMeta: {
-        ...current.initialMeta,
-        [id]: {
-          lastEditedAt: updatedAt,
+        initialMeta: {
+          ...current.initialMeta,
+          [id]: {
+            lastEditedAt: updatedAt,
+          },
         },
-      },
-      recentEdits: buildRecentEdits(current.recentEdits, {
-        kind: "initial",
-        id,
-        pinyin: seed?.pinyin ?? id,
-        label:
-          patch.actorName ??
-          current.initials[id]?.actorName ??
-          seed?.pinyin ??
+        recentEdits: buildRecentEdits(current.recentEdits, {
+          kind: "initial",
           id,
-        updatedAt,
-      }),
-    }));
+          pinyin: seed?.pinyin ?? id,
+          label: nextDraft.actorName.trim() || seed?.pinyin || id,
+          updatedAt,
+        }),
+      };
+
+      if (saveTimeoutRef.current) {
+        window.clearTimeout(saveTimeoutRef.current);
+      }
+
+      saveTimeoutRef.current = window.setTimeout(() => {
+        saveStorageData(nextData);
+        setIsSaving(false);
+        setLastSavedAt(updatedAt);
+      }, WRITE_DEBOUNCE_MS);
+
+      return nextData;
+    });
   };
 
-  const updateFinal = (id: string, patch: Partial<FinalDraft>) => {
+  const saveFinal = (id: string, nextDraft: FinalDraft) => {
     const seed = finals.find((item) => item.id === id);
     const updatedAt = new Date().toISOString();
 
     setIsSaving(true);
-    setData((current) => ({
-      ...current,
-      finals: {
-        ...current.finals,
-        [id]: {
-          ...current.finals[id],
-          ...patch,
+    setData((current) => {
+      const nextData = {
+        ...current,
+        finals: {
+          ...current.finals,
+          [id]: {
+            ...nextDraft,
+          },
         },
-      },
-      finalMeta: {
-        ...current.finalMeta,
-        [id]: {
-          lastEditedAt: updatedAt,
+        finalMeta: {
+          ...current.finalMeta,
+          [id]: {
+            lastEditedAt: updatedAt,
+          },
         },
-      },
-      recentEdits: buildRecentEdits(current.recentEdits, {
-        kind: "final",
-        id,
-        pinyin: seed?.pinyin ?? id,
-        label:
-          patch.setName ??
-          current.finals[id]?.setName ??
-          seed?.pinyin ??
+        recentEdits: buildRecentEdits(current.recentEdits, {
+          kind: "final",
           id,
-        updatedAt,
-      }),
-    }));
+          pinyin: seed?.pinyin ?? id,
+          label: nextDraft.setName.trim() || seed?.pinyin || id,
+          updatedAt,
+        }),
+      };
+
+      if (saveTimeoutRef.current) {
+        window.clearTimeout(saveTimeoutRef.current);
+      }
+
+      saveTimeoutRef.current = window.setTimeout(() => {
+        saveStorageData(nextData);
+        setIsSaving(false);
+        setLastSavedAt(updatedAt);
+      }, WRITE_DEBOUNCE_MS);
+
+      return nextData;
+    });
   };
 
   const replaceData = (nextData: AppStorageData) => {
+    if (saveTimeoutRef.current) {
+      window.clearTimeout(saveTimeoutRef.current);
+    }
     setIsSaving(false);
     setData(nextData);
     setLastSavedAt(new Date().toISOString());
@@ -144,6 +154,9 @@ export function useMappingStore() {
 
   const resetData = () => {
     const nextData = createEmptyStorageData();
+    if (saveTimeoutRef.current) {
+      window.clearTimeout(saveTimeoutRef.current);
+    }
     clearStorageData();
     setIsSaving(false);
     setData(nextData);
@@ -159,8 +172,8 @@ export function useMappingStore() {
     isHydrated,
     isSaving,
     lastSavedAt,
-    updateInitial,
-    updateFinal,
+    saveInitial,
+    saveFinal,
     replaceData,
     resetData,
   };
