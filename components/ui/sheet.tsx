@@ -30,7 +30,7 @@ const sheetVariants = {
   right:
     "inset-y-0 right-0 h-full w-full border-l border-border/70 sm:max-w-xl",
   bottom:
-    "inset-x-0 bottom-0 max-h-[92vh] w-full rounded-t-[28px] border-t border-border/70",
+    "inset-x-0 bottom-0 w-full rounded-t-[28px] border-t border-border/70",
 };
 
 interface SheetContentProps

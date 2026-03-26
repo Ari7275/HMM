@@ -66,6 +66,10 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+body[data-scroll-locked] {
+  overscroll-behavior: none;
+}
+
 ::selection {
   background: rgba(111, 124, 255, 0.35);
   color: white;
@@ -112,4 +116,15 @@ body {
 .zones-text {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+.mobile-editor-sheet {
+  height: 100svh;
+  max-height: 100svh;
+}
+
+@supports (height: 100dvh) {
+  .mobile-editor-sheet {
+    min-height: 100svh;
+  }
 }

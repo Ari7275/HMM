@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Layers3, Sparkles, UsersRound } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import { DashboardShell } from "@/components/dashboard-shell";
 import { EditorSheet } from "@/components/editor/editor-sheet";
@@ -99,6 +99,8 @@ export function MappingDashboard() {
   const [finalDraft, setFinalDraft] = useState<FinalDraft | null>(null);
   const [pendingSelection, setPendingSelection] = useState<EditorSelection | null>(null);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const initialsSectionRef = useRef<HTMLDivElement | null>(null);
+  const finalsSectionRef = useRef<HTMLDivElement | null>(null);
 
   const {
     data,
@@ -277,6 +279,26 @@ export function MappingDashboard() {
     }
   };
 
+  const scrollToMobileSection = (kind: "initials" | "finals") => {
+    if (isDesktop) {
+      return;
+    }
+
+    setMobileTab(kind);
+
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        const target =
+          kind === "initials" ? initialsSectionRef.current : finalsSectionRef.current;
+
+        target?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+    });
+  };
+
   return (
     <>
       <DashboardShell
@@ -312,6 +334,8 @@ export function MappingDashboard() {
           totals={totals}
           isSaving={isSaving}
           lastSavedAt={lastSavedAt}
+          onJumpToInitials={!isDesktop ? () => scrollToMobileSection("initials") : undefined}
+          onJumpToFinals={!isDesktop ? () => scrollToMobileSection("finals") : undefined}
         />
 
         <SearchFilterBar
@@ -321,7 +345,7 @@ export function MappingDashboard() {
           onFilterChange={setFilter}
         />
 
-        <RecentEditsStrip edits={recentEdits} onSelect={setSelection} />
+        <RecentEditsStrip edits={recentEdits} onSelect={requestSelection} />
 
         {hasNoMappings ? (
           <motion.section
@@ -383,9 +407,11 @@ export function MappingDashboard() {
             <TabsContent value="initials" forceMount className="data-[state=inactive]:hidden">
               {mobileTab === "initials" ? (
                 <motion.div
+                  ref={initialsSectionRef}
                   key="initials"
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
+                  className="scroll-mt-6"
                 >
                   <MappingGrid
                     title="Initials"
@@ -405,9 +431,11 @@ export function MappingDashboard() {
             <TabsContent value="finals" forceMount className="data-[state=inactive]:hidden">
               {mobileTab === "finals" ? (
                 <motion.div
+                  ref={finalsSectionRef}
                   key="finals"
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
+                  className="scroll-mt-6"
                 >
                   <MappingGrid
                     title="Finals"

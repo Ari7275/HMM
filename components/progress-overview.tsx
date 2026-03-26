@@ -1,6 +1,7 @@
 import { CheckCircle2, Layers3, Sparkles, UsersRound } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import type { TotalsSummary } from "@/lib/types";
 import { formatRelativeEditTime } from "@/lib/utils";
 
@@ -8,6 +9,8 @@ interface ProgressOverviewProps {
   totals: TotalsSummary;
   isSaving: boolean;
   lastSavedAt: string | null;
+  onJumpToInitials?: () => void;
+  onJumpToFinals?: () => void;
 }
 
 function ProgressCard({
@@ -16,16 +19,17 @@ function ProgressCard({
   helper,
   percent,
   icon: Icon,
+  onClick,
 }: {
   label: string;
   value: string;
   helper: string;
   percent: number;
   icon: typeof Sparkles;
+  onClick?: () => void;
 }) {
-  return (
-    <Card className="glass-panel">
-      <CardContent className="p-5">
+  const content = (
+    <CardContent className="p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
             <p className="text-sm text-slate-300">{label}</p>
@@ -42,15 +46,35 @@ function ProgressCard({
             style={{ width: `${Math.max(percent, 4)}%` }}
           />
         </div>
-      </CardContent>
-    </Card>
+    </CardContent>
   );
+
+  if (onClick) {
+    return (
+      <Card className="glass-panel transition-transform duration-200 hover:-translate-y-0.5">
+        <button
+          type="button"
+          onClick={onClick}
+          className={cn(
+            "w-full rounded-[inherit] text-left outline-none",
+            "focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          )}
+        >
+          {content}
+        </button>
+      </Card>
+    );
+  }
+
+  return <Card className="glass-panel">{content}</Card>;
 }
 
 export function ProgressOverview({
   totals,
   isSaving,
   lastSavedAt,
+  onJumpToInitials,
+  onJumpToFinals,
 }: ProgressOverviewProps) {
   const saveLabel = isSaving
     ? "Saving changes..."
@@ -65,6 +89,7 @@ export function ProgressOverview({
         helper="Actors assigned"
         percent={(totals.initials.completed / totals.initials.total) * 100}
         icon={UsersRound}
+        onClick={onJumpToInitials}
       />
       <ProgressCard
         label="Finals"
@@ -72,6 +97,7 @@ export function ProgressOverview({
         helper="Sets assigned"
         percent={(totals.finals.completed / totals.finals.total) * 100}
         icon={Layers3}
+        onClick={onJumpToFinals}
       />
       <Card className="glass-panel">
         <CardContent className="flex h-full flex-col justify-between p-5">

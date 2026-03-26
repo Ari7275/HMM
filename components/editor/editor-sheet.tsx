@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 
 import {
@@ -29,6 +30,43 @@ export function EditorSheet({
   children,
   footer,
 }: EditorSheetProps) {
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open || isDesktop) {
+      return;
+    }
+
+    const container = scrollContainerRef.current;
+
+    if (!container) {
+      return;
+    }
+
+    const handleFocusIn = (event: FocusEvent) => {
+      const target = event.target;
+
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+
+      if (!target.matches("input, textarea, select, [contenteditable='true']")) {
+        return;
+      }
+
+      window.setTimeout(() => {
+        target.scrollIntoView({
+          block: "center",
+          behavior: "smooth",
+        });
+      }, 180);
+    };
+
+    container.addEventListener("focusin", handleFocusIn);
+
+    return () => container.removeEventListener("focusin", handleFocusIn);
+  }, [isDesktop, open]);
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -36,7 +74,7 @@ export function EditorSheet({
         className={
           isDesktop
             ? "rounded-none"
-            : "h-[100dvh] max-h-[100dvh] rounded-t-[32px] sm:h-[92dvh] sm:max-h-[92dvh]"
+            : "mobile-editor-sheet rounded-t-[32px]"
         }
       >
         <div className="flex h-full min-h-0 flex-col">
@@ -44,11 +82,14 @@ export function EditorSheet({
             <SheetTitle>{title}</SheetTitle>
             <SheetDescription>{description}</SheetDescription>
           </SheetHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <div
+            ref={scrollContainerRef}
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-4 scroll-pb-32 [-webkit-overflow-scrolling:touch]"
+          >
             <div className="p-6">{children}</div>
           </div>
           {footer ? (
-            <div className="sticky bottom-0 shrink-0 border-t border-white/6 bg-[linear-gradient(180deg,rgba(12,17,37,0.92),rgba(8,12,26,0.98))] px-6 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur-xl">
+            <div className="shrink-0 border-t border-white/6 bg-[linear-gradient(180deg,rgba(12,17,37,0.92),rgba(8,12,26,0.98))] px-6 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur-xl">
               {footer}
             </div>
           ) : null}
