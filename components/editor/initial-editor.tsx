@@ -5,7 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import type { InitialItem } from "@/lib/types";
+import type { InitialActorCategory, InitialItem } from "@/lib/types";
+
+const categoryCopy: Record<InitialActorCategory, string> = {
+  male: "Male actor category",
+  female: "Female actor category",
+  fictional: "Fictional actor category",
+  wildcard: "Wildcard actor category",
+};
 
 interface InitialEditorProps {
   item: InitialItem;
@@ -24,6 +31,7 @@ export function InitialEditor({ item, onChange }: InitialEditorProps) {
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Initial</p>
             <h3 className="mt-2 text-3xl font-semibold text-white">{item.pinyin}</h3>
+            <p className="mt-2 text-sm text-slate-400">{categoryCopy[item.actorCategory]}</p>
           </div>
           <Badge variant={item.status === "complete" ? "success" : "warning"} className="gap-1.5">
             {item.status === "complete" ? (
@@ -46,13 +54,18 @@ export function InitialEditor({ item, onChange }: InitialEditorProps) {
         </div>
 
         <div className="space-y-2">
+          <Label htmlFor="initial-category">Actor category</Label>
+          <Input id="initial-category" value={categoryCopy[item.actorCategory]} readOnly />
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="actor-name">Actor name</Label>
           <Input
             id="actor-name"
             autoFocus
             value={item.actorName}
             onChange={(event) => onChange({ actorName: event.target.value })}
-            placeholder="Enter your actor"
+            placeholder={`Enter your ${item.actorCategory} actor`}
           />
         </div>
 

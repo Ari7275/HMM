@@ -1,27 +1,20 @@
 export type MappingStatus = "empty" | "complete";
 export type FilterStatus = "all" | MappingStatus;
-
-export type InitialCategory =
-  | "male"
-  | "female"
-  | "fictional"
-  | "leader"
-  | "null";
+export type InitialActorCategory = "male" | "female" | "fictional" | "wildcard";
+export type InitialActorCategoryFilter = "all" | InitialActorCategory;
 
 export type FinalCategory = "standard" | "null";
 
 export interface InitialSeed {
   id: string;
   pinyin: string;
-  category: InitialCategory;
-  groupLabel: string;
+  actorCategory: InitialActorCategory;
 }
 
 export interface FinalSeed {
   id: string;
   pinyin: string;
   category: FinalCategory;
-  groupLabel: string;
 }
 
 export interface InitialDraft {
@@ -33,7 +26,7 @@ export interface InitialDraft {
 export interface FinalDraft {
   setName: string;
   description: string;
-  zones: string;
+  locations: string[];
   notes: string;
 }
 
@@ -87,6 +80,7 @@ export interface EditorSelection {
 export interface ExportInitialItem extends InitialDraft {
   id: string;
   pinyin: string;
+  actorCategory: InitialActorCategory;
   status: MappingStatus;
 }
 
@@ -101,4 +95,12 @@ export interface MappingExportPayload {
   exportedAt: string;
   initials: ExportInitialItem[];
   finals: ExportFinalItem[];
+}
+
+export interface LegacyFinalDraftShape {
+  setName?: unknown;
+  description?: unknown;
+  locations?: unknown;
+  notes?: unknown;
+  zones?: unknown;
 }

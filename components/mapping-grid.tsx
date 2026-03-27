@@ -1,15 +1,19 @@
+import type { ReactNode } from "react";
+
 import { Compass, SearchX, Sparkles } from "lucide-react";
 
 import { MappingCard } from "@/components/mapping-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { MappingStatus } from "@/lib/types";
+import type { InitialActorCategory, MappingStatus } from "@/lib/types";
 
 export interface MappingGridItem {
   id: string;
+  kind: "initial" | "final";
   pinyin: string;
   name: string;
-  groupLabel: string;
   status: MappingStatus;
+  actorCategory?: InitialActorCategory;
+  locations?: string[];
   lastEditedAt: string | null;
 }
 
@@ -24,6 +28,7 @@ interface MappingGridProps {
   emptyTitle: string;
   emptyDescription: string;
   showOnboardingHint?: boolean;
+  headerControls?: ReactNode;
 }
 
 export function MappingGrid({
@@ -37,14 +42,16 @@ export function MappingGrid({
   emptyTitle,
   emptyDescription,
   showOnboardingHint = false,
+  headerControls,
 }: MappingGridProps) {
   return (
     <Card className="glass-panel overflow-hidden">
       <CardHeader className="border-b border-white/6 pb-5">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
             <CardTitle className="text-xl text-white">{title}</CardTitle>
             <p className="max-w-xl text-sm leading-6 text-slate-300">{description}</p>
+            {headerControls}
           </div>
           <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3 text-right">
             <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Visible</p>
@@ -60,10 +67,12 @@ export function MappingGrid({
             {items.map((item) => (
               <MappingCard
                 key={item.id}
+                kind={item.kind}
                 pinyin={item.pinyin}
                 name={item.name}
                 status={item.status}
-                groupLabel={item.groupLabel}
+                actorCategory={item.actorCategory}
+                locations={item.locations}
                 lastEditedAt={item.lastEditedAt}
                 isRecent={recentIds.has(item.id)}
                 onClick={() => onSelect(item.id)}

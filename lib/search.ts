@@ -1,4 +1,9 @@
-import type { FilterStatus, FinalItem, InitialItem } from "@/lib/types";
+import type {
+  FilterStatus,
+  FinalItem,
+  InitialActorCategoryFilter,
+  InitialItem,
+} from "@/lib/types";
 
 function matchesQuery(values: string[], query: string): boolean {
   if (!query.trim()) {
@@ -13,15 +18,18 @@ export function filterInitialItems(
   items: InitialItem[],
   query: string,
   filter: FilterStatus,
+  categoryFilter: InitialActorCategoryFilter,
 ): InitialItem[] {
   return items.filter((item) => {
     const matchesStatus = filter === "all" ? true : item.status === filter;
     const matchesSearch = matchesQuery(
-      [item.pinyin, item.actorName, item.description, item.notes],
+      [item.pinyin, item.actorCategory, item.actorName, item.description, item.notes],
       query,
     );
+    const matchesCategory =
+      categoryFilter === "all" ? true : item.actorCategory === categoryFilter;
 
-    return matchesStatus && matchesSearch;
+    return matchesStatus && matchesSearch && matchesCategory;
   });
 }
 
@@ -33,7 +41,7 @@ export function filterFinalItems(
   return items.filter((item) => {
     const matchesStatus = filter === "all" ? true : item.status === filter;
     const matchesSearch = matchesQuery(
-      [item.pinyin, item.setName, item.description, item.zones, item.notes],
+      [item.pinyin, item.setName, item.description, item.locations.join(" "), item.notes],
       query,
     );
 

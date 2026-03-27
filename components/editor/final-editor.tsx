@@ -1,18 +1,22 @@
-import { CheckCircle2, CircleDashed, MapPinned } from "lucide-react";
+import { Check, CheckCircle2, ChevronDown, CircleDashed, MapPinned } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { SET_LOCATION_OPTIONS } from "@/lib/seed-data";
 import type { FinalItem } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface FinalEditorProps {
   item: FinalItem;
   onChange: (patch: {
     setName?: string;
     description?: string;
-    zones?: string;
+    locations?: string[];
     notes?: string;
   }) => void;
 }
@@ -36,7 +40,7 @@ export function FinalEditor({ item, onChange }: FinalEditorProps) {
           </Badge>
         </div>
         <p className="mt-4 text-sm leading-6 text-slate-400">
-          Assign the set you want for this final. Zones stay fully free-form and are rendered as readable multi-line notes.
+          Assign the set you want for this final and pick the meaningful areas inside it.
         </p>
       </div>
 
@@ -67,14 +71,80 @@ export function FinalEditor({ item, onChange }: FinalEditorProps) {
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="zones">Zones</Label>
-          <Textarea
-            id="zones"
-            value={item.zones}
-            onChange={(event) => onChange({ zones: event.target.value })}
-            placeholder={"List areas, landmarks, or movement paths.\nOne line per cue works well."}
-          />
+        <div className="space-y-3">
+          <Label>Locations</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-auto min-h-12 w-full justify-between rounded-2xl px-4 py-3 text-left font-medium"
+              >
+                <span className="truncate">
+                  {item.locations.length
+                    ? `${item.locations.length} location${item.locations.length === 1 ? "" : "s"} selected`
+                    : "Choose locations inside this set"}
+                </span>
+                <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-[min(22rem,calc(100vw-2rem))] p-2">
+              <div className="space-y-1">
+                {SET_LOCATION_OPTIONS.map((location) => {
+                  const isSelected = item.locations.includes(location);
+
+                  return (
+                    <button
+                      key={location}
+                      type="button"
+                      onClick={() =>
+                        onChange({
+                          locations: isSelected
+                            ? item.locations.filter((value) => value !== location)
+                            : [...item.locations, location],
+                        })
+                      }
+                      className={cn(
+                        "flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm transition",
+                        isSelected
+                          ? "bg-indigo-300/12 text-white"
+                          : "text-slate-300 hover:bg-white/5",
+                      )}
+                    >
+                      <span>{location}</span>
+                      <span
+                        className={cn(
+                          "flex h-5 w-5 items-center justify-center rounded-full border",
+                          isSelected
+                            ? "border-indigo-300/30 bg-indigo-300/20 text-indigo-100"
+                            : "border-white/10 text-transparent",
+                        )}
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {item.locations.length ? (
+            <div className="flex flex-wrap gap-2">
+              {item.locations.map((location) => (
+                <span
+                  key={location}
+                  className="inline-flex items-center rounded-full border border-cyan-300/15 bg-cyan-300/10 px-3 py-1 text-xs font-medium text-cyan-100"
+                >
+                  {location}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">
+              No locations selected yet. Pick the areas you want to reuse inside this set.
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -96,14 +166,27 @@ export function FinalEditor({ item, onChange }: FinalEditorProps) {
             <MapPinned className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-sm font-medium">Draft zones preview</p>
+            <p className="text-sm font-medium">Draft locations preview</p>
             <p className="text-sm text-slate-400">
-              Use free text however you like. Line breaks are preserved, but nothing is committed until you save.
+              Locations stay structured for quick scanning, while notes remain flexible.
             </p>
           </div>
         </div>
-        <div className="zones-text mt-4 min-h-24 rounded-[20px] border border-white/8 bg-slate-950/40 px-4 py-3 text-sm leading-6 text-slate-200">
-          {item.zones.trim() || "No zones added yet. Try listing key corners, shelves, doors, or directional paths."}
+        <div className="mt-4 flex flex-wrap gap-2">
+          {item.locations.length ? (
+            item.locations.map((location) => (
+              <span
+                key={location}
+                className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-100"
+              >
+                {location}
+              </span>
+            ))
+          ) : (
+            <div className="rounded-[20px] border border-white/8 bg-slate-950/40 px-4 py-3 text-sm leading-6 text-slate-400">
+              No structured locations yet. Add the areas inside this set that matter to you.
+            </div>
+          )}
         </div>
       </div>
     </div>

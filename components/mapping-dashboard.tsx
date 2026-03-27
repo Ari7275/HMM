@@ -35,17 +35,31 @@ import type {
   FilterStatus,
   FinalDraft,
   FinalItem,
+  InitialActorCategoryFilter,
   InitialDraft,
   InitialItem,
 } from "@/lib/types";
+import { cn } from "@/lib/utils";
+
+const INITIAL_CATEGORY_FILTERS: {
+  value: InitialActorCategoryFilter;
+  label: string;
+}[] = [
+  { value: "all", label: "All categories" },
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+  { value: "fictional", label: "Fictional" },
+  { value: "wildcard", label: "Wildcard" },
+];
 
 function toInitialCard(item: InitialItem): MappingGridItem {
   return {
     id: item.id,
+    kind: "initial",
     pinyin: item.pinyin,
     name: item.actorName,
-    groupLabel: item.groupLabel,
     status: item.status,
+    actorCategory: item.actorCategory,
     lastEditedAt: item.lastEditedAt,
   };
 }
@@ -53,10 +67,11 @@ function toInitialCard(item: InitialItem): MappingGridItem {
 function toFinalCard(item: FinalItem): MappingGridItem {
   return {
     id: item.id,
+    kind: "final",
     pinyin: item.pinyin,
     name: item.setName,
-    groupLabel: item.groupLabel,
     status: item.status,
+    locations: item.locations,
     lastEditedAt: item.lastEditedAt,
   };
 }
@@ -93,6 +108,8 @@ export function MappingDashboard() {
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<FilterStatus>("all");
+  const [initialCategoryFilter, setInitialCategoryFilter] =
+    useState<InitialActorCategoryFilter>("all");
   const [mobileTab, setMobileTab] = useState<"initials" | "finals">("initials");
   const [selection, setSelection] = useState<EditorSelection | null>(null);
   const [initialDraft, setInitialDraft] = useState<InitialDraft | null>(null);
@@ -117,8 +134,8 @@ export function MappingDashboard() {
   } = useMappingStore();
 
   const filteredInitials = useMemo(
-    () => filterInitialItems(initials, query, filter),
-    [filter, initials, query],
+    () => filterInitialItems(initials, query, filter, initialCategoryFilter),
+    [filter, initialCategoryFilter, initials, query],
   );
   const filteredFinals = useMemo(
     () => filterFinalItems(finals, query, filter),
@@ -147,7 +164,7 @@ export function MappingDashboard() {
       finalDraft &&
       (selectedFinal.setName !== finalDraft.setName ||
         selectedFinal.description !== finalDraft.description ||
-        selectedFinal.zones !== finalDraft.zones ||
+        selectedFinal.locations.join("|") !== finalDraft.locations.join("|") ||
         selectedFinal.notes !== finalDraft.notes),
   );
 
@@ -219,7 +236,7 @@ export function MappingDashboard() {
     setFinalDraft({
       setName: nextItem.setName,
       description: nextItem.description,
-      zones: nextItem.zones,
+      locations: nextItem.locations,
       notes: nextItem.notes,
     });
     setInitialDraft(null);
@@ -298,6 +315,25 @@ export function MappingDashboard() {
       });
     });
   };
+
+  const initialCategoryControls = (
+    <div className="flex flex-wrap gap-2 pt-1">
+      {INITIAL_CATEGORY_FILTERS.map((item) => (
+        <Button
+          key={item.value}
+          variant={initialCategoryFilter === item.value ? "default" : "outline"}
+          size="sm"
+          onClick={() => setInitialCategoryFilter(item.value)}
+          className={cn(
+            "min-w-0 rounded-full",
+            initialCategoryFilter !== item.value && "bg-white/4 hover:bg-white/8",
+          )}
+        >
+          {item.label}
+        </Button>
+      ))}
+    </div>
+  );
 
   return (
     <>
@@ -380,10 +416,11 @@ export function MappingDashboard() {
               emptyTitle={initialEmpty.title}
               emptyDescription={initialEmpty.description}
               showOnboardingHint={hasNoMappings}
+              headerControls={initialCategoryControls}
             />
             <MappingGrid
               title="Finals"
-              description="Reusable finals represented by sets. Zones remain free-text and can be kept as loose or detailed as you like."
+              description="Reusable finals represented by sets, with structured locations inside each set for cleaner scanning."
               totalCount={finals.length}
               visibleCount={filteredFinals.length}
               items={filteredFinals.map(toFinalCard)}
@@ -424,6 +461,7 @@ export function MappingDashboard() {
                     emptyTitle={initialEmpty.title}
                     emptyDescription={initialEmpty.description}
                     showOnboardingHint={hasNoMappings}
+                    headerControls={initialCategoryControls}
                   />
                 </motion.div>
               ) : null}
@@ -439,7 +477,7 @@ export function MappingDashboard() {
                 >
                   <MappingGrid
                     title="Finals"
-                    description="Tap a pinyin final to manage its set."
+                    description="Tap a pinyin final to manage its set and internal locations."
                     totalCount={finals.length}
                     visibleCount={filteredFinals.length}
                     items={filteredFinals.map(toFinalCard)}
@@ -504,7 +542,7 @@ export function MappingDashboard() {
               setFinalDraft((current) => ({
                 setName: current?.setName ?? "",
                 description: current?.description ?? "",
-                zones: current?.zones ?? "",
+                locations: current?.locations ?? [],
                 notes: current?.notes ?? "",
                 ...patch,
               }))

@@ -40,7 +40,7 @@ export function buildFinalItems(data: AppStorageData): FinalItem[] {
       ...seed,
       setName: draft?.setName ?? "",
       description: draft?.description ?? "",
-      zones: draft?.zones ?? "",
+      locations: draft?.locations ?? [],
       notes: draft?.notes ?? "",
       status: getFinalStatus(draft?.setName ?? ""),
       lastEditedAt: meta?.lastEditedAt ?? null,

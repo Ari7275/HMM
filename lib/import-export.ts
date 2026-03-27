@@ -2,7 +2,10 @@ import { z } from "zod";
 
 import { createEmptyStorageData, FINAL_SEEDS, INITIAL_SEEDS } from "@/lib/seed-data";
 import { getFinalStatus, getInitialStatus } from "@/lib/status";
-import { mergeWithDefaults } from "@/lib/storage";
+import {
+  mergeWithDefaults,
+  normalizeFinalDraft as normalizeStoredFinalDraft,
+} from "@/lib/storage";
 import type {
   AppStorageData,
   ExportFinalItem,
@@ -15,6 +18,7 @@ import type {
 const exportInitialSchema = z.object({
   id: z.string(),
   pinyin: z.string(),
+  actorCategory: z.enum(["male", "female", "fictional", "wildcard"]).optional(),
   actorName: z.string().default(""),
   description: z.string().default(""),
   notes: z.string().default(""),
@@ -26,8 +30,9 @@ const exportFinalSchema = z.object({
   pinyin: z.string(),
   setName: z.string().default(""),
   description: z.string().default(""),
-  zones: z.string().default(""),
+  locations: z.array(z.string()).default([]),
   notes: z.string().default(""),
+  zones: z.string().optional(),
   status: z.enum(["empty", "complete"]).optional(),
 });
 
@@ -38,6 +43,16 @@ const exportPayloadSchema = z.object({
   finals: z.array(exportFinalSchema),
 });
 
+const initialPinyinAliases: Record<string, string[]> = {
+  yi: ["y"],
+  wu: ["w"],
+  ø: ["Ø"],
+};
+
+const finalPinyinAliases: Record<string, string[]> = {
+  ø: ["Ø"],
+};
+
 function normalizeInitialDraft(draft: Partial<InitialDraft>): InitialDraft {
   return {
     actorName: draft.actorName ?? "",
@@ -47,12 +62,7 @@ function normalizeInitialDraft(draft: Partial<InitialDraft>): InitialDraft {
 }
 
 function normalizeFinalDraft(draft: Partial<FinalDraft>): FinalDraft {
-  return {
-    setName: draft.setName ?? "",
-    description: draft.description ?? "",
-    zones: draft.zones ?? "",
-    notes: draft.notes ?? "",
-  };
+  return normalizeStoredFinalDraft(draft);
 }
 
 export function createExportPayload(data: AppStorageData): MappingExportPayload {
@@ -62,6 +72,7 @@ export function createExportPayload(data: AppStorageData): MappingExportPayload 
     return {
       id: seed.id,
       pinyin: seed.pinyin,
+      actorCategory: seed.actorCategory,
       ...draft,
       status: getInitialStatus(draft.actorName),
     };
@@ -103,7 +114,11 @@ export function parseImportPayload(text: string): AppStorageData {
   for (const item of parsed.data.initials) {
     const seed = INITIAL_SEEDS.find((candidate) => candidate.id === item.id);
 
-    if (!seed || seed.pinyin !== item.pinyin) {
+    const validPinyin = seed
+      ? [seed.pinyin, ...(initialPinyinAliases[seed.pinyin] ?? [])]
+      : [];
+
+    if (!seed || !validPinyin.includes(item.pinyin)) {
       continue;
     }
 
@@ -113,7 +128,11 @@ export function parseImportPayload(text: string): AppStorageData {
   for (const item of parsed.data.finals) {
     const seed = FINAL_SEEDS.find((candidate) => candidate.id === item.id);
 
-    if (!seed || seed.pinyin !== item.pinyin) {
+    const validPinyin = seed
+      ? [seed.pinyin, ...(finalPinyinAliases[seed.pinyin] ?? [])]
+      : [];
+
+    if (!seed || !validPinyin.includes(item.pinyin)) {
       continue;
     }
 

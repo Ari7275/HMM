@@ -31,7 +31,7 @@ export function SearchFilterBar({
         <Input
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="Search by pinyin, actor name, set name, description, notes..."
+          placeholder="Search by pinyin, actor name, set name, locations, description, notes..."
           className="pl-11"
         />
       </div>
