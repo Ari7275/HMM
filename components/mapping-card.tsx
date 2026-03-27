@@ -1,11 +1,15 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle2, CircleDashed, Clock3, MapPin } from "lucide-react";
+import { CheckCircle2, CircleDashed, MapPin } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import type { InitialActorCategory, MappingStatus } from "@/lib/types";
-import { cn, formatRelativeEditTime } from "@/lib/utils";
+import type {
+  FrequencyTier,
+  InitialActorCategory,
+  MappingStatus,
+} from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface MappingCardProps {
   kind: "initial" | "final";
@@ -14,17 +18,11 @@ interface MappingCardProps {
   status: MappingStatus;
   actorCategory?: InitialActorCategory;
   locations?: string[];
+  frequencyCount: number;
+  frequencyTier: FrequencyTier;
   isRecent: boolean;
-  lastEditedAt: string | null;
   onClick: () => void;
 }
-
-const categoryStyles: Record<InitialActorCategory, string> = {
-  male: "border-sky-300/20 bg-sky-300/10 text-sky-100",
-  female: "border-pink-300/20 bg-pink-300/10 text-pink-100",
-  fictional: "border-violet-300/20 bg-violet-300/10 text-violet-100",
-  wildcard: "border-amber-300/20 bg-amber-300/10 text-amber-100",
-};
 
 const categoryLabels: Record<InitialActorCategory, string> = {
   male: "Male",
@@ -33,6 +31,27 @@ const categoryLabels: Record<InitialActorCategory, string> = {
   wildcard: "Wildcard",
 };
 
+const frequencyTierLabels: Record<FrequencyTier, string> = {
+  "very-high": "Very common",
+  high: "Common",
+  medium: "Regular",
+  low: "Uncommon",
+  rare: "Rare",
+};
+
+const frequencyTierPills: Record<FrequencyTier, string> = {
+  "very-high": "border-indigo-300/18 bg-indigo-300/12 text-indigo-100",
+  high: "border-cyan-300/18 bg-cyan-300/10 text-cyan-100",
+  medium: "border-white/10 bg-white/5 text-slate-200",
+  low: "border-white/8 bg-white/[0.03] text-slate-300",
+  rare: "border-white/6 bg-white/[0.02] text-slate-500",
+};
+
+function getUsageRatio(kind: "initial" | "final", frequencyCount: number) {
+  const max = kind === "initial" ? 142 : 652;
+  return Math.max(8, Math.round((frequencyCount / max) * 100));
+}
+
 export function MappingCard({
   kind,
   pinyin,
@@ -40,12 +59,30 @@ export function MappingCard({
   status,
   actorCategory,
   locations = [],
+  frequencyCount,
+  frequencyTier,
   isRecent,
-  lastEditedAt,
   onClick,
 }: MappingCardProps) {
   const isComplete = status === "complete";
   const displayLocations = locations.slice(0, 3);
+  const usageRatio = getUsageRatio(kind, frequencyCount);
+  const frequencyCopy = `${frequencyTierLabels[frequencyTier]} (${frequencyCount} characters)`;
+  const guidanceCopy =
+    kind === "initial"
+      ? "Assign a strong, memorable actor"
+      : "Choose a very familiar place";
+  const importanceClass = cn(
+    frequencyTier === "very-high" &&
+      (isComplete
+        ? "border-emerald-300/18 shadow-[0_14px_36px_rgba(24,191,140,0.08)]"
+        : "border-indigo-300/22 shadow-[0_18px_40px_rgba(111,124,255,0.12)]"),
+    frequencyTier === "high" &&
+      (isComplete
+        ? "border-emerald-300/14 shadow-[0_12px_28px_rgba(24,191,140,0.05)]"
+        : "border-cyan-300/16 shadow-[0_14px_34px_rgba(67,208,255,0.07)]"),
+    (frequencyTier === "low" || frequencyTier === "rare") && "opacity-[0.96]",
+  );
 
   return (
     <motion.button
@@ -58,6 +95,7 @@ export function MappingCard({
         isComplete
           ? "border-emerald-400/15 bg-[linear-gradient(180deg,rgba(12,22,31,0.96),rgba(9,14,24,0.9))]"
           : "border-white/8 bg-[linear-gradient(180deg,rgba(13,18,36,0.95),rgba(8,12,25,0.88))]",
+        importanceClass,
         isRecent && "ring-1 ring-indigo-300/30",
       )}
     >
@@ -69,30 +107,19 @@ export function MappingCard({
             : "bg-[radial-gradient(circle_at_top_right,rgba(111,124,255,0.16),transparent_35%)]",
         )}
       />
-      <div className="relative flex min-h-9 flex-col items-start gap-2">
-        <div className="min-w-0">
-          {kind === "initial" && actorCategory ? (
-            <Badge
-              variant="outline"
-              className={cn(
-                "h-7 max-w-full whitespace-nowrap px-2.5 text-[11px] font-medium uppercase tracking-[0.18em]",
-                categoryStyles[actorCategory],
-              )}
-            >
-              {categoryLabels[actorCategory]}
-            </Badge>
-          ) : (
-            <Badge
-              variant="outline"
-              className="h-7 max-w-full whitespace-nowrap border-white/10 bg-white/5 px-2.5 text-[11px] font-medium uppercase tracking-[0.18em] text-slate-300"
-            >
-              Set
-            </Badge>
+      <div className="relative flex flex-wrap items-start justify-between gap-2">
+        <Badge
+          variant="outline"
+          className={cn(
+            "h-7 max-w-full whitespace-nowrap px-2.5 text-[11px] font-medium uppercase tracking-[0.18em]",
+            frequencyTierPills[frequencyTier],
           )}
-        </div>
+        >
+          {frequencyTierLabels[frequencyTier].toUpperCase()}
+        </Badge>
         <Badge
           variant={isComplete ? "success" : "warning"}
-          className="h-7 justify-center gap-1.5 whitespace-nowrap"
+          className="h-7 shrink-0 gap-1.5 whitespace-nowrap"
         >
           {isComplete ? (
             <CheckCircle2 className="h-3.5 w-3.5" />
@@ -103,8 +130,13 @@ export function MappingCard({
         </Badge>
       </div>
 
-      <div className="relative mt-5 flex flex-1 flex-col justify-between gap-5">
+      <div className="relative mt-4 flex flex-1 flex-col justify-between gap-5">
         <div>
+          <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+            {kind === "initial" && actorCategory
+              ? `${categoryLabels[actorCategory]} actor`
+              : "Set mapping"}
+          </p>
           <h3 className="text-2xl font-semibold tracking-tight text-white">{pinyin}</h3>
           <p
             className={cn(
@@ -112,11 +144,7 @@ export function MappingCard({
               isComplete ? "text-slate-100" : "text-slate-400",
             )}
           >
-            {isComplete
-              ? name
-              : kind === "initial"
-                ? "Add the actor that represents this initial."
-                : "Add the set that represents this final."}
+            {isComplete ? name : guidanceCopy}
           </p>
         </div>
 
@@ -134,25 +162,31 @@ export function MappingCard({
               ))}
             </div>
           ) : (
-            <p className="text-xs leading-5 text-slate-500">
-              {kind === "initial"
-                ? actorCategory
-                  ? `${categoryLabels[actorCategory]} actor category`
-                  : "Actor category"
-                : "Select meaningful areas inside the set."}
-            </p>
+            <p className="text-xs leading-5 text-slate-500">{guidanceCopy}</p>
           )}
 
-          <div className="flex items-center justify-between gap-3 text-xs text-slate-500">
-            <span>Tap card to edit</span>
-            {lastEditedAt ? (
-              <span className="inline-flex items-center gap-1.5 text-right">
-                <Clock3 className="h-3.5 w-3.5" />
-                {formatRelativeEditTime(lastEditedAt)?.replace("Edited ", "")}
-              </span>
-            ) : (
-              <span className="text-slate-600">Not edited yet</span>
-            )}
+          {kind === "final" && locations.length ? (
+            <p className="text-xs text-slate-500">
+              {locations.length} location{locations.length === 1 ? "" : "s"} selected
+            </p>
+          ) : null}
+
+          <div className="space-y-2">
+            <div className="h-1.5 overflow-hidden rounded-full bg-white/6">
+              <div
+                className={cn(
+                  "h-full rounded-full transition-all duration-500",
+                  isComplete
+                    ? "bg-gradient-to-r from-emerald-400 to-cyan-300"
+                    : "bg-gradient-to-r from-indigo-400 to-cyan-300",
+                )}
+                style={{ width: `${usageRatio}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between gap-3 text-xs text-slate-500">
+              <span>{frequencyCopy}</span>
+              <span>Usage: {frequencyCount} characters</span>
+            </div>
           </div>
         </div>
       </div>

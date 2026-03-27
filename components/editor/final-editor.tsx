@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { SET_LOCATION_OPTIONS } from "@/lib/seed-data";
+import { SET_LOCATION_OPTIONS, TONE_AREA_REFERENCE } from "@/lib/seed-data";
 import type { FinalItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +42,23 @@ export function FinalEditor({ item, onChange }: FinalEditorProps) {
         <p className="mt-4 text-sm leading-6 text-slate-400">
           Assign the set you want for this final and pick the meaningful areas inside it.
         </p>
+      </div>
+
+      <div className="rounded-[24px] border border-indigo-300/12 bg-indigo-300/[0.07] p-5">
+        <div className="flex items-start gap-3">
+          <div className="rounded-2xl border border-indigo-300/15 bg-indigo-300/10 p-2.5 text-indigo-100">
+            <CheckCircle2 className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-white">High priority set</p>
+            <p className="mt-1 text-sm leading-6 text-slate-300">
+              This set will appear very often. Choose something extremely familiar and easy to revisit.
+            </p>
+            <p className="mt-2 text-xs text-slate-400">
+              Usage: {item.frequencyCount} characters
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-5">
@@ -145,6 +162,46 @@ export function FinalEditor({ item, onChange }: FinalEditorProps) {
               No locations selected yet. Pick the areas you want to reuse inside this set.
             </p>
           )}
+        </div>
+
+        <div className="rounded-[24px] border border-cyan-300/10 bg-cyan-300/[0.06] p-4">
+          <div className="flex items-start gap-3">
+            <div className="rounded-2xl border border-cyan-300/15 bg-cyan-300/10 p-2.5 text-cyan-100">
+              <MapPinned className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-white">
+                Blueprint tone-area reference
+              </p>
+              <p className="mt-1 text-sm leading-6 text-slate-300">
+                Read-only guidance for how tones commonly map to areas inside a set.
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-2">
+            {TONE_AREA_REFERENCE.map((item) => (
+              <div
+                key={item.tone}
+                className="flex items-start justify-between gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-3"
+              >
+                <div>
+                  <p className="text-sm font-medium text-white">Tone {item.tone}</p>
+                  <p className="mt-1 text-sm text-slate-300">
+                    {item.tone === 1
+                      ? "Outside entrance"
+                      : item.tone === 2
+                        ? "Kitchen / hallway"
+                        : item.tone === 3
+                          ? "Bedroom / living"
+                          : item.tone === 4
+                            ? "Bathroom / backyard"
+                            : "Roof"}
+                  </p>
+                </div>
+                <span className="text-xs text-slate-500">{item.frequencyCount}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="space-y-2">

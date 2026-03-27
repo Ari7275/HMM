@@ -2,6 +2,8 @@ export type MappingStatus = "empty" | "complete";
 export type FilterStatus = "all" | MappingStatus;
 export type InitialActorCategory = "male" | "female" | "fictional" | "wildcard";
 export type InitialActorCategoryFilter = "all" | InitialActorCategory;
+export type FrequencyTier = "very-high" | "high" | "medium" | "low" | "rare";
+export type MappingSortOption = "none" | "frequency" | "alphabetical";
 
 export type FinalCategory = "standard" | "null";
 
@@ -9,12 +11,14 @@ export interface InitialSeed {
   id: string;
   pinyin: string;
   actorCategory: InitialActorCategory;
+  frequencyCount: number;
 }
 
 export interface FinalSeed {
   id: string;
   pinyin: string;
   category: FinalCategory;
+  frequencyCount: number;
 }
 
 export interface InitialDraft {
@@ -32,11 +36,13 @@ export interface FinalDraft {
 
 export interface InitialItem extends InitialSeed, InitialDraft {
   status: MappingStatus;
+  frequencyTier: FrequencyTier;
   lastEditedAt: string | null;
 }
 
 export interface FinalItem extends FinalSeed, FinalDraft {
   status: MappingStatus;
+  frequencyTier: FrequencyTier;
   lastEditedAt: string | null;
 }
 
@@ -50,6 +56,12 @@ export interface RecentEdit {
 
 export interface StoredMetadata {
   lastEditedAt: string | null;
+}
+
+export interface ToneAreaReference {
+  tone: 0 | 1 | 2 | 3 | 4;
+  areas: string[];
+  frequencyCount: number;
 }
 
 export interface AppStorageData {

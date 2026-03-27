@@ -4,7 +4,11 @@ import { Compass, SearchX, Sparkles } from "lucide-react";
 
 import { MappingCard } from "@/components/mapping-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { InitialActorCategory, MappingStatus } from "@/lib/types";
+import type {
+  FrequencyTier,
+  InitialActorCategory,
+  MappingStatus,
+} from "@/lib/types";
 
 export interface MappingGridItem {
   id: string;
@@ -14,6 +18,8 @@ export interface MappingGridItem {
   status: MappingStatus;
   actorCategory?: InitialActorCategory;
   locations?: string[];
+  frequencyCount: number;
+  frequencyTier: FrequencyTier;
   lastEditedAt: string | null;
 }
 
@@ -73,7 +79,8 @@ export function MappingGrid({
                 status={item.status}
                 actorCategory={item.actorCategory}
                 locations={item.locations}
-                lastEditedAt={item.lastEditedAt}
+                frequencyCount={item.frequencyCount}
+                frequencyTier={item.frequencyTier}
                 isRecent={recentIds.has(item.id)}
                 onClick={() => onSelect(item.id)}
               />

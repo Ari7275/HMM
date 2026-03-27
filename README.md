@@ -28,8 +28,10 @@
 
     - `INITIAL_SEEDS` contains the reusable initials / actor slots.
     - Each initial now includes a fixed `actorCategory`: `male`, `female`, `fictional`, or `wildcard`.
+- Each initial also includes fixed `frequencyCount` metadata from the Hanzi Movie Method reference data.
     - `FINAL_SEEDS` contains the reusable finals / set slots.
     - `SET_LOCATION_OPTIONS` contains the predefined selectable areas inside a set.
+- Finals also include fixed `frequencyCount` metadata, and `TONE_AREA_REFERENCE` provides a read-only Blueprint tone-to-area helper for the editor UI.
 
     These seeds are treated as the source of truth for the available pinyin items. Imported or stored data is merged onto them so the chart stays intact.
 
@@ -43,6 +45,7 @@
     - When you save, the visible app state updates immediately and the browser write is slightly deferred to avoid unnecessary storage churn.
     - Closing or canceling with unsaved edits discards the draft after confirmation.
     - Legacy final data that used `zones` is migrated safely by preserving that text in `notes` and initializing structured `locations` to `[]`.
+- Frequency metadata and tone-area guidance are fixed reference data only; they are not stored as user-editable state.
 
     ## Import / Export
 
@@ -52,6 +55,7 @@
     - `Import JSON` validates the uploaded file before replacing local data.
     - Import/export includes fixed actor-category metadata for initials and structured `locations` arrays for finals.
     - Older JSON payloads that still contain `zones` are migrated forward where possible.
+- Because frequency and tone-area data come from seeds/reference constants, the import/export payload stays focused on your editable mapping content.
     - Unknown or malformed data is rejected so bad JSON does not break the app.
     - `Reset` clears saved mappings and restores the empty seeded state.
 

@@ -3,6 +3,7 @@ import type {
   FinalItem,
   InitialActorCategoryFilter,
   InitialItem,
+  MappingSortOption,
 } from "@/lib/types";
 
 function matchesQuery(values: string[], query: string): boolean {
@@ -46,5 +47,55 @@ export function filterFinalItems(
     );
 
     return matchesStatus && matchesSearch;
+  });
+}
+
+function compareAlphabetically(a: { pinyin: string }, b: { pinyin: string }) {
+  return a.pinyin.localeCompare(b.pinyin);
+}
+
+export function sortInitialItems(
+  items: InitialItem[],
+  sort: MappingSortOption,
+): InitialItem[] {
+  const nextItems = [...items];
+
+  if (sort === "none") {
+    return nextItems;
+  }
+
+  if (sort === "alphabetical") {
+    return nextItems.sort(compareAlphabetically);
+  }
+
+  return nextItems.sort((a, b) => {
+    if (b.frequencyCount !== a.frequencyCount) {
+      return b.frequencyCount - a.frequencyCount;
+    }
+
+    return compareAlphabetically(a, b);
+  });
+}
+
+export function sortFinalItems(
+  items: FinalItem[],
+  sort: MappingSortOption,
+): FinalItem[] {
+  const nextItems = [...items];
+
+  if (sort === "none") {
+    return nextItems;
+  }
+
+  if (sort === "alphabetical") {
+    return nextItems.sort(compareAlphabetically);
+  }
+
+  return nextItems.sort((a, b) => {
+    if (b.frequencyCount !== a.frequencyCount) {
+      return b.frequencyCount - a.frequencyCount;
+    }
+
+    return compareAlphabetically(a, b);
   });
 }

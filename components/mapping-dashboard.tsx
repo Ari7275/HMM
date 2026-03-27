@@ -13,6 +13,7 @@ import { MappingGrid, type MappingGridItem } from "@/components/mapping-grid";
 import { ProgressOverview } from "@/components/progress-overview";
 import { RecentEditsStrip } from "@/components/recent-edits-strip";
 import { SearchFilterBar } from "@/components/search-filter-bar";
+import { TopPriorities } from "@/components/top-priorities";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,8 +29,17 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMappingStore } from "@/hooks/use-mapping-store";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { getFinalStatus, getInitialStatus } from "@/lib/status";
-import { filterFinalItems, filterInitialItems } from "@/lib/search";
+import {
+  getFinalStatus,
+  getFrequencyTier,
+  getInitialStatus,
+} from "@/lib/status";
+import {
+  filterFinalItems,
+  filterInitialItems,
+  sortFinalItems,
+  sortInitialItems,
+} from "@/lib/search";
 import type {
   EditorSelection,
   FilterStatus,
@@ -38,6 +48,7 @@ import type {
   InitialActorCategoryFilter,
   InitialDraft,
   InitialItem,
+  MappingSortOption,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -52,6 +63,14 @@ const INITIAL_CATEGORY_FILTERS: {
   { value: "wildcard", label: "Wildcard" },
 ];
 
+const SORT_OPTIONS: { value: MappingSortOption; label: string }[] = [
+  { value: "frequency", label: "By frequency" },
+  { value: "alphabetical", label: "A-Z" },
+];
+
+const ACTIVE_SORT_CLASS =
+  "border-cyan-300/35 bg-cyan-300/12 text-cyan-100 shadow-[0_10px_24px_rgba(56,189,248,0.12)] hover:bg-cyan-300/16";
+
 function toInitialCard(item: InitialItem): MappingGridItem {
   return {
     id: item.id,
@@ -60,6 +79,8 @@ function toInitialCard(item: InitialItem): MappingGridItem {
     name: item.actorName,
     status: item.status,
     actorCategory: item.actorCategory,
+    frequencyCount: item.frequencyCount,
+    frequencyTier: item.frequencyTier,
     lastEditedAt: item.lastEditedAt,
   };
 }
@@ -72,8 +93,41 @@ function toFinalCard(item: FinalItem): MappingGridItem {
     name: item.setName,
     status: item.status,
     locations: item.locations,
+    frequencyCount: item.frequencyCount,
+    frequencyTier: item.frequencyTier,
     lastEditedAt: item.lastEditedAt,
   };
+}
+
+function getFrequencyLabel(tier: ReturnType<typeof getFrequencyTier>) {
+  switch (tier) {
+    case "very-high":
+      return "Very common";
+    case "high":
+      return "Common";
+    case "medium":
+      return "Regular";
+    case "low":
+      return "Uncommon";
+    case "rare":
+      return "Rare";
+  }
+}
+
+function sortByPriority<T extends { status: string; frequencyCount: number; pinyin: string }>(
+  items: T[],
+) {
+  return [...items].sort((a, b) => {
+    if (a.status !== b.status) {
+      return a.status === "empty" ? -1 : 1;
+    }
+
+    if (b.frequencyCount !== a.frequencyCount) {
+      return b.frequencyCount - a.frequencyCount;
+    }
+
+    return a.pinyin.localeCompare(b.pinyin);
+  });
 }
 
 function getEmptyContent({
@@ -110,6 +164,8 @@ export function MappingDashboard() {
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [initialCategoryFilter, setInitialCategoryFilter] =
     useState<InitialActorCategoryFilter>("all");
+  const [initialSort, setInitialSort] = useState<MappingSortOption>("frequency");
+  const [finalSort, setFinalSort] = useState<MappingSortOption>("frequency");
   const [mobileTab, setMobileTab] = useState<"initials" | "finals">("initials");
   const [selection, setSelection] = useState<EditorSelection | null>(null);
   const [initialDraft, setInitialDraft] = useState<InitialDraft | null>(null);
@@ -133,14 +189,15 @@ export function MappingDashboard() {
     resetData,
   } = useMappingStore();
 
-  const filteredInitials = useMemo(
-    () => filterInitialItems(initials, query, filter, initialCategoryFilter),
-    [filter, initialCategoryFilter, initials, query],
-  );
-  const filteredFinals = useMemo(
-    () => filterFinalItems(finals, query, filter),
-    [filter, finals, query],
-  );
+  const filteredInitials = useMemo(() => {
+    return sortInitialItems(
+      filterInitialItems(initials, query, filter, initialCategoryFilter),
+      initialSort,
+    );
+  }, [filter, initialCategoryFilter, initialSort, initials, query]);
+  const filteredFinals = useMemo(() => {
+    return sortFinalItems(filterFinalItems(finals, query, filter), finalSort);
+  }, [filter, finalSort, finals, query]);
 
   const selectedInitial =
     selection?.kind === "initial"
@@ -180,6 +237,56 @@ export function MappingDashboard() {
       new Set(recentEdits.filter((item) => item.kind === "final").map((item) => item.id)),
     [recentEdits],
   );
+  const topPriorityItems = useMemo(() => {
+    const targetCount = 8;
+    const sortedInitials = sortByPriority(initials);
+    const sortedFinals = sortByPriority(finals);
+    const half = Math.floor(targetCount / 2);
+
+    const pickedInitials = sortedInitials.slice(0, Math.min(half, sortedInitials.length));
+    const pickedFinals = sortedFinals.slice(0, Math.min(half, sortedFinals.length));
+
+    const remainderPool = [
+      ...sortedInitials.slice(pickedInitials.length).map((item) => ({
+        ...item,
+        kind: "initial" as const,
+      })),
+      ...sortedFinals.slice(pickedFinals.length).map((item) => ({
+        ...item,
+        kind: "final" as const,
+      })),
+    ];
+
+    const remainder = sortByPriority(remainderPool).slice(
+      0,
+      targetCount - pickedInitials.length - pickedFinals.length,
+    );
+
+    return [
+      ...pickedInitials.map((item) => ({ ...item, kind: "initial" as const })),
+      ...pickedFinals.map((item) => ({ ...item, kind: "final" as const })),
+      ...remainder,
+    ]
+      .sort((a, b) => {
+        if (a.status !== b.status) {
+          return a.status === "empty" ? -1 : 1;
+        }
+
+        if (b.frequencyCount !== a.frequencyCount) {
+          return b.frequencyCount - a.frequencyCount;
+        }
+
+        return a.pinyin.localeCompare(b.pinyin);
+      })
+      .map((item) => ({
+        id: item.id,
+        kind: item.kind,
+        pinyin: item.pinyin,
+        status: item.status,
+        frequencyLabel: getFrequencyLabel(item.frequencyTier),
+        frequencyCount: item.frequencyCount,
+      }));
+  }, [finals, initials]);
 
   const hasNoMappings = totals.overall.completed === 0;
 
@@ -317,16 +424,57 @@ export function MappingDashboard() {
   };
 
   const initialCategoryControls = (
+    <div className="flex flex-col gap-3 pt-1">
+      <div className="flex flex-wrap gap-2">
+        {INITIAL_CATEGORY_FILTERS.map((item) => (
+          <Button
+            key={item.value}
+            variant={initialCategoryFilter === item.value ? "default" : "outline"}
+            size="sm"
+            onClick={() =>
+              setInitialCategoryFilter((current) => (current === item.value ? "all" : item.value))
+            }
+            className={cn(
+              "min-w-0 rounded-full",
+              initialCategoryFilter !== item.value && "bg-white/4 hover:bg-white/8",
+            )}
+          >
+            {item.label}
+          </Button>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {SORT_OPTIONS.map((item) => (
+          <Button
+            key={item.value}
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              setInitialSort((current) => (current === item.value ? "none" : item.value))
+            }
+            className={cn(
+              "min-w-24 rounded-full",
+              initialSort === item.value ? ACTIVE_SORT_CLASS : "bg-white/4 hover:bg-white/8",
+            )}
+          >
+            {item.label}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+
+  const finalSortControls = (
     <div className="flex flex-wrap gap-2 pt-1">
-      {INITIAL_CATEGORY_FILTERS.map((item) => (
+      {SORT_OPTIONS.map((item) => (
         <Button
           key={item.value}
-          variant={initialCategoryFilter === item.value ? "default" : "outline"}
+          variant="outline"
           size="sm"
-          onClick={() => setInitialCategoryFilter(item.value)}
+          onClick={() => setFinalSort((current) => (current === item.value ? "none" : item.value))}
           className={cn(
-            "min-w-0 rounded-full",
-            initialCategoryFilter !== item.value && "bg-white/4 hover:bg-white/8",
+            "min-w-24 rounded-full",
+            finalSort === item.value ? ACTIVE_SORT_CLASS : "bg-white/4 hover:bg-white/8",
           )}
         >
           {item.label}
@@ -378,7 +526,19 @@ export function MappingDashboard() {
           query={query}
           filter={filter}
           onQueryChange={setQuery}
-          onFilterChange={setFilter}
+          onFilterChange={(value) =>
+            setFilter((current) => (current === value ? "all" : value))
+          }
+        />
+
+        <TopPriorities
+          items={topPriorityItems}
+          onSelect={(item) =>
+            requestSelection({
+              kind: item.kind,
+              id: item.id,
+            })
+          }
         />
 
         <RecentEditsStrip edits={recentEdits} onSelect={requestSelection} />
@@ -429,6 +589,7 @@ export function MappingDashboard() {
               emptyTitle={finalEmpty.title}
               emptyDescription={finalEmpty.description}
               showOnboardingHint={hasNoMappings}
+              headerControls={finalSortControls}
             />
           </div>
         ) : (
@@ -486,6 +647,7 @@ export function MappingDashboard() {
                     emptyTitle={finalEmpty.title}
                     emptyDescription={finalEmpty.description}
                     showOnboardingHint={hasNoMappings}
+                    headerControls={finalSortControls}
                   />
                 </motion.div>
               ) : null}
